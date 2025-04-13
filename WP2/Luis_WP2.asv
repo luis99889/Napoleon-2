@@ -55,14 +55,15 @@ end
 % Define the number of closest satellites to find
 n = 3; 
 
+% Preallocate 3D matrix to store ECEF coordinates of n closest satellites
+closest_sat_coords = zeros(num_times, n, 3); % Dimensions: num_times x n x 3 (for x,y,z)
 
 % Preallocate matrices to store data for n closest satellites
 closest_sat_coords = zeros(num_times, n, 3); % 3D matrix: num_times x n x 3 (for x,y,z)
 closest_sat_indices = zeros(num_times, n);   % 2D matrix: num_times x n (for satellite indices)
 closest_sat_dists = zeros(num_times, n);     % 2D matrix: num_times x n (for distances in meters)
-closest_sat_elevations = zeros(num_times, n); % 2D matrix: num_times x n (for elevation angles in degrees)
 
-% Find the n closest satellites at each time and store their data
+% Find the n closest satellites at each time and store their coordinates
 for j = 1:numel(times)
     active_sats = find(status(j, :));
     if ~isempty(active_sats)
@@ -80,47 +81,21 @@ for j = 1:numel(times)
         closest_sats = active_sats(dist_idx(1:num_closest));
         closest_dists = sorted_dists(1:num_closest);
         
-        % Store ECEF coordinates, indices, distances, and elevation angles of the closest satellites
+        % Store ECEF coordinates of the closest satellites in 3D matrix
         for k = 1:num_closest
             sat_idx = closest_sats(k);
-            sat_pos = all_sat_pos(:, j, sat_idx);
-            gs_pos = gs_ecef_pos_time(:, j);
-            
-            % Store coordinates, indices, and distances
-            closest_sat_coords(j, k, :) = sat_pos; % Coordinates
-            closest_sat_indices(j, k) = sat_idx;   % Satellite index
-            closest_sat_dists(j, k) = closest_dists(k); % Distance in meters
-            
-            % Calculate elevation angle
-            sat_vec = sat_pos - gs_pos; % Line-of-sight vector from GS to satellite
-            % Convert GS position to LLA (latitude, longitude, altitude) for ENU transformation
-            [lat, lon, ~] = ecef2lla(gs_pos(1), gs_pos(2), gs_pos(3));
-            % Transform line-of-sight vector to ENU frame (local East-North-Up)
-            sat_vec_enu = ecef2enu(sat_vec(1), sat_vec(2), sat_vec(3), lat, lon, 0);
-            % Calculate elevation angle (angle above horizontal plane)
-            elevation = asind(sat_vec_enu(3) / norm(sat_vec_enu));
-            % Store the elevation angle
-            closest_sat_elevations(j, k) = elevation;
+            closest_sat_coords(j, k, :) = all_sat_pos(:, j, sat_idx);
         end
         % Remaining slots (if num_closest < n) are already zero due to preallocation
     else
         fprintf('At time %s, no satellite has access\n', string(times(j)));
-        % Row remains zeros for this time step in all matrices
+        % Row remains zeros for this time step
     end
 end
 
-% Optional: Display a sample of the stored data for verification
-fprintf('Sample data for n=%d closest satellites at time step 60:\n', n);
-fprintf('Satellite Indices:\n');
-disp(closest_sat_indices(60, :));
-fprintf('Distances (km):\n');
-disp(closest_sat_dists(60, :) / 1000); % Convert to km for display
-fprintf('ECEF Coordinates (m):\n');
-disp(squeeze(closest_sat_coords(60, :, :))); % Display as n x 3 matrix
-fprintf('Elevation Angles (degrees):\n');
-disp(closest_sat_elevations(60, :));
-
-
+% Optional: Display a sample of the stored coordinates for verification
+fprintf('Sample ECEF coordinates of n=%d closest satellites at first time step:\n', n);
+disp(squeeze(closest_sat_coords(1, :, :))); % Display as n x 3 matrix for first time step
 
 % Visualize (optional)
 % show(sat);
