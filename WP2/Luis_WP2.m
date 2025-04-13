@@ -21,15 +21,15 @@ inclination = 86.4;     % degrees
 sat = createConstellation(sc, P, S, semiMajorAxis, inclination);
 
 % Set Turin's coordinates for the fixed GU
-gu_lat = 45.07;
-gu_long = 7.69;
-gu_alt = 0;
+gs_lat = 45.07;
+gs_long = 7.69;
+gs_alt = 0;
 
 % Define the GS (GU) in the Geodetic Coordinates
-gs = groundStation(sc, gu_lat, gu_long);
+gs = groundStation(sc, gs_lat, gs_long);
 
 % Exctract the GS position in ECEF coordinates  
-gs_ecef_pos = lla2ecef([gu_lat, gu_long, gu_alt]);
+gs_ecef_pos = lla2ecef([gs_lat, gs_long, gs_alt]);
 gs_ecef_pos_time = repmat(gs_ecef_pos' , 1, numel(times));
 
 % Define dimensions
@@ -88,7 +88,7 @@ for j = 1:numel(times)
         closest_dists = sorted_dists(1:num_closest);
 
         % ***** REMOVED ecef2lla call *****
-        % No need to calculate lat/lon here, use gu_lat and gu_long directly
+        % No need to calculate lat/lon here, use gs_lat and gs_long directly
 
         % Store ECEF coordinates, indices, distances, and calculate elevation
         for k = 1:num_closest
@@ -100,10 +100,13 @@ for j = 1:numel(times)
             closest_sat_indices(j, k) = sat_idx;                        % Satellite index
             closest_sat_dists(j, k) = closest_dists(k);                 % Distance in meters
 
-            % Calculate elevation angle using gu_lat and gu_long
+            % Calculate elevation angle using gs_lat and gs_long
             sat_vec = sat_pos - gs_pos; % Line-of-sight vector from GS to satellite
-            % ***** USING gu_lat and gu_long directly in ecef2enu *****
-            sat_vec_enu = ecef2enu(sat_vec(1), sat_vec(2), sat_vec(3), gu_lat, gu_long, 0); % Transform to ENU
+            % Define the WGS84 reference ellipsoid (using meters as units)
+            spheroid = referenceEllipsoid('wgs84', 'meter');
+
+            % ***** USING gs_lat and gs_long directly in ecef2enu *****
+            sat_vec_enu = ecef2enu(sat_vec(1), sat_vec(2), sat_vec(3), gs_lat, gs_long, gs_alt, spheroi); % Transform to ENU
             
             % Check for potential division by zero if norm is extremely small (unlikely here)
             norm_sat_vec_enu = norm(sat_vec_enu);
