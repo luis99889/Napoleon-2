@@ -62,64 +62,100 @@ closest_sat_indices = zeros(num_times, n);   % 2D matrix: num_times x n (for sat
 closest_sat_dists = zeros(num_times, n);     % 2D matrix: num_times x n (for distances in meters)
 closest_sat_elevations = zeros(num_times, n); % 2D matrix: num_times x n (for elevation angles in degrees)
 
-% Find the n closest satellites at each time and store their data
+% Find the n closest satellites at each time and store their data + elevation
+fprintf('Calculating closest satellites and elevation angles...\n'); % Progress indicator
 for j = 1:numel(times)
     active_sats = find(status(j, :));
+    gs_pos = gs_ecef_pos_time(:, j); % GS ECEF position at current time - Still needed for distance/vector calc
+
     if ~isempty(active_sats)
+        % Calculate distances only for active satellites
         distances = zeros(1, length(active_sats));
+        sat_positions_active = zeros(3, length(active_sats)); % Store positions temporarily
         for k = 1:length(active_sats)
             sat_idx = active_sats(k);
             sat_pos = all_sat_pos(:, j, sat_idx);
-            gs_pos = gs_ecef_pos_time(:, j);
+            sat_positions_active(:, k) = sat_pos; % Store position for later use
             distances(k) = norm(gs_pos - sat_pos);
         end
+
         % Sort distances to find the n closest satellites
         [sorted_dists, dist_idx] = sort(distances);
         % Limit to n or the number of active satellites, whichever is smaller
         num_closest = min(n, length(active_sats));
-        closest_sats = active_sats(dist_idx(1:num_closest));
+        closest_sats_indices_in_active = dist_idx(1:num_closest); % Indices within the 'active_sats' array
+        closest_sats = active_sats(closest_sats_indices_in_active); % Actual satellite indices (1 to num_sats)
         closest_dists = sorted_dists(1:num_closest);
-        
-        % Store ECEF coordinates, indices, distances, and elevation angles of the closest satellites
+
+        % ***** REMOVED ecef2lla call *****
+        % No need to calculate lat/lon here, use gu_lat and gu_long directly
+
+        % Store ECEF coordinates, indices, distances, and calculate elevation
         for k = 1:num_closest
-            sat_idx = closest_sats(k);
-            sat_pos = all_sat_pos(:, j, sat_idx);
-            gs_pos = gs_ecef_pos_time(:, j);
-            
-            % Store coordinates, indices, and distances
-            closest_sat_coords(j, k, :) = sat_pos; % Coordinates
-            closest_sat_indices(j, k) = sat_idx;   % Satellite index
-            closest_sat_dists(j, k) = closest_dists(k); % Distance in meters
-            
-            % Calculate elevation angle
+            sat_idx = closest_sats(k); % The actual satellite index
+            sat_pos = sat_positions_active(:, closest_sats_indices_in_active(k)); % Retrieve stored position
+
+            % Store data
+            closest_sat_coords(j, k, :) = sat_pos;                      % Coordinates
+            closest_sat_indices(j, k) = sat_idx;                        % Satellite index
+            closest_sat_dists(j, k) = closest_dists(k);                 % Distance in meters
+
+            % Calculate elevation angle using gu_lat and gu_long
             sat_vec = sat_pos - gs_pos; % Line-of-sight vector from GS to satellite
-            % Convert GS position to LLA (latitude, longitude, altitude) for ENU transformation
-            [lat, lon, ~] = ecef2lla(gs_pos(1), gs_pos(2), gs_pos(3));
-            % Transform line-of-sight vector to ENU frame (local East-North-Up)
-            sat_vec_enu = ecef2enu(sat_vec(1), sat_vec(2), sat_vec(3), lat, lon, 0);
-            % Calculate elevation angle (angle above horizontal plane)
-            elevation = asind(sat_vec_enu(3) / norm(sat_vec_enu));
-            % Store the elevation angle
-            closest_sat_elevations(j, k) = elevation;
+            % ***** USING gu_lat and gu_long directly in ecef2enu *****
+            sat_vec_enu = ecef2enu(sat_vec(1), sat_vec(2), sat_vec(3), gu_lat, gu_long, 0); % Transform to ENU
+            
+            % Check for potential division by zero if norm is extremely small (unlikely here)
+            norm_sat_vec_enu = norm(sat_vec_enu);
+            if norm_sat_vec_enu > eps % Use eps (floating-point relative accuracy) as threshold
+                elevation = asind(sat_vec_enu(3) / norm_sat_vec_enu); % Elevation angle
+            else
+                elevation = 0; % Or NaN, depending on how you want to handle zero vector case
+            end
+            closest_sat_elevations(j, k) = elevation;                   % Store elevation
         end
         % Remaining slots (if num_closest < n) are already zero due to preallocation
+
     else
-        fprintf('At time %s, no satellite has access\n', string(times(j)));
+        % fprintf('At time %s, no satellite has access\n', string(times(j))); % Optional: reduce console output
         % Row remains zeros for this time step in all matrices
     end
+
+    % Optional: Add progress update to console
+    if mod(j, round(num_times/10)) == 0 || j == num_times
+        fprintf('Processed %d/%d time steps (%.0f%%)\n', j, num_times, (j/num_times)*100);
+    end
 end
+fprintf('Calculations complete.\n');
 
-% Optional: Display a sample of the stored data for verification
-fprintf('Sample data for n=%d closest satellites at time step 60:\n', n);
+% --- Rest of your code (display, visualization, function definition) ---
+
+
+
+% Optional: Display a sample of the stored data for verification (including elevation)
+time_step_to_display = 60; % Example time step
+fprintf('\nSample data for n=%d closest satellites at time step %d:\n', n, time_step_to_display);
 fprintf('Satellite Indices:\n');
-disp(closest_sat_indices(60, :));
+disp(closest_sat_indices(time_step_to_display, :));
 fprintf('Distances (km):\n');
-disp(closest_sat_dists(60, :) / 1000); % Convert to km for display
-fprintf('ECEF Coordinates (m):\n');
-disp(squeeze(closest_sat_coords(60, :, :))); % Display as n x 3 matrix
+disp(closest_sat_dists(time_step_to_display, :) / 1000); % Convert to km
 fprintf('Elevation Angles (degrees):\n');
-disp(closest_sat_elevations(60, :));
+disp(closest_sat_elevations(time_step_to_display, :));
+fprintf('ECEF Coordinates (m):\n');
+disp(squeeze(closest_sat_coords(time_step_to_display, :, :))); % Display as n x 3 matrix
 
+
+
+% Visualize (optional)
+% show(sat);
+% groundTrack(sat, LeadTime=7200);
+% play(sc);
+
+% Highlight ground station
+% gs.MarkerColor = [1 0 0]; % Red marker for ground station
+
+% Function definition remains the same
+% function sat = createConstellation(sc, P, S, semiMajorAxis, inclination) ... end
 
 
 % Visualize (optional)
