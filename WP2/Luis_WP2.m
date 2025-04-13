@@ -8,6 +8,9 @@ stopTime = startTime + hours(4);
 sampleTime = 60;
 sc = satelliteScenario(startTime,stopTime,sampleTime);
 
+% Define the WGS84 reference ellipsoid (using meters as units)
+spheroid = referenceEllipsoid('wgs84', 'meter');
+
 % Create an array for time samples in date format
 times = startTime : seconds(sampleTime) : stopTime;
 
@@ -28,16 +31,25 @@ gs_alt = 0;
 % Define the GS (GU) in the Geodetic Coordinates
 gs = groundStation(sc, gs_lat, gs_long);
 
-% Exctract the GS position in ECEF coordinates  
+% Compute GS ECEF position explicitly with spheroid for consistency
 gs_ecef_pos = lla2ecef([gs_lat, gs_long, gs_alt]);
-gs_ecef_pos_time = repmat(gs_ecef_pos' , 1, numel(times));
+gs_ecef_pos_time = repmat(gs_ecef_pos', 1, numel(times));
+
+% Debug: Print GS coordinates for verification
+fprintf('Ground Station Coordinates: Lat = %.4f deg, Lon = %.4f deg, Alt = %.4f m\n', gs_lat, gs_long, gs_alt);
+fprintf('Ground Station ECEF Position: [%.2f, %.2f, %.2f] m\n', gs_ecef_pos(1), gs_ecef_pos(2), gs_ecef_pos(3));
+
+% Convert back to LLA to confirm consistency
+LLA = ecef2lla([gs_ecef_pos(1) gs_ecef_pos(2) gs_ecef_pos(3)]);
+fprintf('Ground Station ECEF to LLA Check: Lat = %.4f deg, Lon = %.4f deg, Alt = %.4f m\n', LLA(1), LLA(2), LLA(3));
+
 
 % Define dimensions
 num_times = numel(times);
 num_sats = numel(sat);
 
 % Define array to store positions of satellites through time (3D: 3 coords × times × satellites)
-all_sat_pos = zeros(3, num_times, num_sats);
+% all_sat_pos = zeros(3, num_times, num_sats);
 all_sat_pos = states(sat, "CoordinateFrame","ecef");
 
 % Define array for Access status to signal visibility between GS and sats
@@ -61,6 +73,8 @@ closest_sat_coords = zeros(num_times, n, 3); % 3D matrix: num_times x n x 3 (for
 closest_sat_indices = zeros(num_times, n);   % 2D matrix: num_times x n (for satellite indices)
 closest_sat_dists = zeros(num_times, n);     % 2D matrix: num_times x n (for distances in meters)
 closest_sat_elevations = zeros(num_times, n); % 2D matrix: num_times x n (for elevation angles in degrees)
+
+
 
 % Find the n closest satellites at each time and store their data + elevation
 fprintf('Calculating closest satellites and elevation angles...\n'); % Progress indicator
@@ -87,9 +101,6 @@ for j = 1:numel(times)
         closest_sats = active_sats(closest_sats_indices_in_active); % Actual satellite indices (1 to num_sats)
         closest_dists = sorted_dists(1:num_closest);
 
-        % ***** REMOVED ecef2lla call *****
-        % No need to calculate lat/lon here, use gs_lat and gs_long directly
-
         % Store ECEF coordinates, indices, distances, and calculate elevation
         for k = 1:num_closest
             sat_idx = closest_sats(k); % The actual satellite index
@@ -100,25 +111,25 @@ for j = 1:numel(times)
             closest_sat_indices(j, k) = sat_idx;                        % Satellite index
             closest_sat_dists(j, k) = closest_dists(k);                 % Distance in meters
 
-            % Calculate elevation angle using gs_lat and gs_long
+            % Calculate elevation angle using gs_lat, gs_long, and gs_alt
             sat_vec = sat_pos - gs_pos; % Line-of-sight vector from GS to satellite
-            % Define the WGS84 reference ellipsoid (using meters as units)
-            spheroid = referenceEllipsoid('wgs84', 'meter');
 
-            % ***** USING gs_lat and gs_long directly in ecef2enu *****
-            sat_vec_enu = ecef2enu(sat_vec(1), sat_vec(2), sat_vec(3), gs_lat, gs_long, gs_alt, spheroi); % Transform to ENU
-            
+            % ***** Capture ENU components explicitly using ecef2enu *****
+            [xEast, yNorth, zUp] = ecef2enu(sat_vec(1), sat_vec(2), sat_vec(3), gs_lat, gs_long, gs_alt, spheroid); % Transform to ENU
+
+            % Compute norm of the ENU vector for elevation calculation
+            norm_sat_vec_enu = sqrt(xEast^2 + yNorth^2 + zUp^2); % Equivalent to norm([xEast, yNorth, zUp])
+
             % Check for potential division by zero if norm is extremely small (unlikely here)
-            norm_sat_vec_enu = norm(sat_vec_enu);
             if norm_sat_vec_enu > eps % Use eps (floating-point relative accuracy) as threshold
-                elevation = asind(sat_vec_enu(3) / norm_sat_vec_enu); % Elevation angle
+                elevation = asind(zUp / norm_sat_vec_enu); % Elevation angle using Up component
             else
                 elevation = 0; % Or NaN, depending on how you want to handle zero vector case
             end
             closest_sat_elevations(j, k) = elevation;                   % Store elevation
+            
         end
         % Remaining slots (if num_closest < n) are already zero due to preallocation
-
     else
         % fprintf('At time %s, no satellite has access\n', string(times(j))); % Optional: reduce console output
         % Row remains zeros for this time step in all matrices
@@ -130,9 +141,6 @@ for j = 1:numel(times)
     end
 end
 fprintf('Calculations complete.\n');
-
-% --- Rest of your code (display, visualization, function definition) ---
-
 
 
 % Optional: Display a sample of the stored data for verification (including elevation)
