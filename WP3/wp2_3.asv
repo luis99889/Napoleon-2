@@ -303,7 +303,7 @@ end
 
 % Numero totale di simulazioni
 num_total = numel(all_faded_waves);
-num_to_concat = min(10, num_total);
+num_to_concat = min(5, num_total);
 selected_idxs = num_total - num_to_concat + 1 : num_total;
 
 % Inizializza array concatenati
@@ -314,6 +314,7 @@ full_channel = [];
 full_state = [];
 
 t_offset = 0; % offset temporale cumulativo
+transition_times = [];
 
 for idx = selected_idxs
     fadedWave = all_faded_waves{idx};
@@ -323,6 +324,7 @@ for idx = selected_idxs
     
     % Allinea il tempo con l'offset temporale accumulato
     adjusted_time = timeVector + t_offset;
+    
     
     % Aggiungi all'unione
     full_time = [full_time; adjusted_time(:)];
@@ -338,40 +340,56 @@ for idx = selected_idxs
     t_offset = t_offset + timeVector(end);
 end
 
-Last_10_Ang = Sat_Ang_time(end-9:end);
-
-
-fprintf('Last 10 Elevation Angles: ');
-fprintf('%f ', Last_10_Ang);
-fprintf('\n');
-
-% Power Profile
+% === Figura 1: Power Profile ===
 figure(1)
 plot(full_time, 20*log10(abs(full_inputWave)), ...
      full_time, 20*log10(abs(full_fadedWave)))
-title('Power Profile - Last 10 Simulations')
+title('Power Profile - Ultime 5 Simulazioni Concatenate')
 legend('Input Waveform', 'Faded Waveform')
 xlabel('Time (s)')
 ylabel('Power (dB)')
 
-% Channel Gain
+for i = 1:length(transition_times)
+    x = transition_times(i);
+    txt = ['Sat Ang: ' num2str(last_Sat_Ang_time(i), '%.2f')];
+    xline(x, '--k', txt, 'LabelOrientation', 'horizontal', ...
+          'LabelVerticalAlignment', 'bottom', 'LabelHorizontalAlignment', 'left');
+end
+
+% === Figura 2: Channel Gain ===
 figure(2)
 plot(full_time, 20*log10(abs(full_channel)))
-title('Channel Gain - Last 10 Simulations')
+title('Channel Gain - Ultime 5 Simulazioni Concatenate')
 xlabel('Time (s)')
 ylabel('Path Gain (dB)')
 
-% State Series 
+for i = 1:length(transition_times)
+    x = transition_times(i);
+    txt = ['Sat Ang: ' num2str(last_Sat_Ang_time(i), '%.2f')];
+    xline(x, '--k', txt, 'LabelOrientation', 'horizontal', ...
+          'LabelVerticalAlignment', 'bottom', 'LabelHorizontalAlignment', 'left');
+end
+
+% === Figura 3: State Series ===
 figure(3)
 plot(full_time, full_state)
-title('State Series - Last 10 Simulations')
+title('State Series - Ultime 5 Simulazioni Concatenate')
 axis([0 full_time(end) -0.5 1.5])
 xlabel('Time (s)')
 ylabel('State')
+
+for i = 1:length(transition_times)
+    x = transition_times(i);
+    txt = ['Sat Ang: ' num2str(last_Sat_Ang_time(i), '%.2f')];
+    xline(x, '--k', txt, 'LabelOrientation', 'horizontal', ...
+          'LabelVerticalAlignment', 'bottom', 'LabelHorizontalAlignment', 'left');
+end
+
+
+
 
 figure(4)
 plot(Sat_Ang_time)
 title('Satellite Elevation Angle over Time')
 xlabel('Time Step')
 ylabel('Elevation Angle (degrees)')
-
