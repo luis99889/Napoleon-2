@@ -301,35 +301,72 @@ end
 
 
 
-% Find the last valid simulation index
-valid_idx = find(~cellfun(@(x) any(isnan(x(:))), all_faded_waves), 1, 'last');
+% Numero totale di simulazioni
+num_total = numel(all_faded_waves);
+num_to_concat = min(10, num_total);
+selected_idxs = num_total - num_to_concat + 1 : num_total;
+
+% Inizializza array concatenati
+full_time = [];
+full_fadedWave = [];
+full_inputWave = [];
+full_channel = [];
+full_state = [];
+
+t_offset = 0; % offset temporale cumulativo
+
+for idx = selected_idxs
+    fadedWave = all_faded_waves{idx};
+    channelCoefficients = all_channel_gains{idx};
+    stateSeries = all_states{idx};
+    timeVector = all_times{idx};
+    
+    % Allinea il tempo con l'offset temporale accumulato
+    adjusted_time = timeVector + t_offset;
+    
+    % Aggiungi all'unione
+    full_time = [full_time; adjusted_time(:)];
+    full_fadedWave = [full_fadedWave; fadedWave(:)];
+    full_channel = [full_channel; channelCoefficients(:)];
+    full_state = [full_state; stateSeries(:)];
+    
+    % Assumi che "in" sia lo stesso input waveform iniziale
+    inputSegment = in(1:length(timeVector));
+    full_inputWave = [full_inputWave; inputSegment(:)];
+    
+    % Aggiorna offset temporale
+    t_offset = t_offset + timeVector(end);
+end
+
+Last_10_Ang = Sat_Ang_time(end-9:end);
 
 
-fadedWave = all_faded_waves{valid_idx};
-channelCoefficients = all_channel_gains{valid_idx};
-stateSeries = all_states{valid_idx};
-distanceVector = all_times{valid_idx};
+fprintf('Last 10 Elevation Angles: ');
+fprintf('%f ', Last_10_Ang);
+fprintf('\n');
 
-timeVector = all_times{valid_idx};  
-
+% Power Profile
 figure(1)
-plot(timeVector, 20*log10(abs(in(1:length(timeVector)))), timeVector, 20*log10(abs(fadedWave)))
-title(['Power Profile of Waveform over Time (Speed = ' num2str(chan.MobileSpeed) ' m/s)'])
+plot(full_time, 20*log10(abs(full_inputWave)), ...
+     full_time, 20*log10(abs(full_fadedWave)))
+title('Power Profile - Last 10 Simulations')
 legend('Input Waveform', 'Faded Waveform')
-xlabel('Time (in seconds)')
-ylabel('Power (in dB)')
+xlabel('Time (s)')
+ylabel('Power (dB)')
 
+% Channel Gain
 figure(2)
-plot(timeVector, 20*log10(abs(channelCoefficients)))
-title('Channel Gain over Time')
-xlabel('Time (in seconds)')
-ylabel('Path Gain (in dB)')
+plot(full_time, 20*log10(abs(full_channel)))
+title('Channel Gain - Last 10 Simulations')
+xlabel('Time (s)')
+ylabel('Path Gain (dB)')
 
+% State Series 
 figure(3)
-plot(timeVector, stateSeries)
-title('State Series of Channel over Time')
-axis([0 timeVector(end) -0.5 1.5])
-xlabel('Time (in seconds)')
+plot(full_time, full_state)
+title('State Series - Last 10 Simulations')
+axis([0 full_time(end) -0.5 1.5])
+xlabel('Time (s)')
 ylabel('State')
 
 figure(4)
@@ -337,3 +374,4 @@ plot(Sat_Ang_time)
 title('Satellite Elevation Angle over Time')
 xlabel('Time Step')
 ylabel('Elevation Angle (degrees)')
+
