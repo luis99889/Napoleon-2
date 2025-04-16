@@ -245,7 +245,7 @@ end
 
 % Parameters
 seed = 72;
-Sample_Rate = 400;
+Sample_Rate = 400; % Hz
 numSamples = Sample_Rate * num_times * 60; % Sample rate times duration of simulation in seconds
 
 all_faded_waves = cell(num_times, 1);
