@@ -369,8 +369,9 @@ axis([0 full_time(end) -0.5 1.5])
 xlabel('Time (s)')
 ylabel('State')
 
+%%
 figure(4)
-plot(Sat_Ang_time)
+plot(Sat_Ang_time, 'o-', 'MarkerSize', 3, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r')
 title('Satellite Elevation Angle over Time')
 xlabel('Time Step')
 ylabel('Elevation Angle (degrees)')
