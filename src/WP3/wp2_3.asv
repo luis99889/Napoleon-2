@@ -377,6 +377,4 @@ xlabel('Time Step')
 ylabel('Elevation Angle (degrees)')
 
 
-% free space path loss (distance), tx power, gain of antenna, bandwidth, noise psd
-
-% maximal ratio combining
+% free space path loss, tx power, gain of antenna, bandwidth, noise psd
