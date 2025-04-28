@@ -77,42 +77,48 @@ end
 
 
 
-% Numero totale di simulazioni
+% Total number of simulations
 num_total = numel(all_faded_waves);
+
+% Number of simulations to concatenate
 num_to_concat = 20;
+
+% Indices of the simulations to be concatenated
 selected_idxs = num_total - num_to_concat + 1 : num_total;
 
-% Inizializza array concatenati
+% Initialize arrays for the concatenated data
 full_time = [];
 full_fadedWave = [];
 full_inputWave = [];
 full_channel = [];
 full_state = [];
 
-t_offset = 0; % offset temporale cumulativo
+t_offset = 0; % Cumulative time offset
 
+% Loop over the selected simulations
 for idx = selected_idxs
     fadedWave = all_faded_waves{idx};
     channelCoefficients = all_channel_gains{idx};
     stateSeries = all_states{idx};
     timeVector = all_times{idx};
     
-    % Allinea il tempo con l'offset temporale accumulato
+    % Align the time vector with the cumulative time offset
     adjusted_time = timeVector + t_offset;
     
-    % Aggiungi all'unione
+    % Append the current simulation data to the concatenated arrays
     full_time = [full_time; adjusted_time(:)];
     full_fadedWave = [full_fadedWave; fadedWave(:)];
     full_channel = [full_channel; channelCoefficients(:)];
     full_state = [full_state; stateSeries(:)];
     
-    % Assumi che "in" sia lo stesso input waveform iniziale
+    % Assume the input waveform "in" is the same for all segments
     inputSegment = in(1:length(timeVector));
     full_inputWave = [full_inputWave; inputSegment(:)];
     
-    % Aggiorna offset temporale
+    % Update the cumulative time offset
     t_offset = t_offset + timeVector(end);
 end
+
 
 Last_20_Ang = Sat_Ang_time(end-19:end);
 
