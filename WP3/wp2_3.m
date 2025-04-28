@@ -241,7 +241,7 @@ function sat = createConstellation(sc, P, S, semiMajorAxis, inclination)
     sat = satellite(sc, semiMajorAxis, eccentricity, inclination, RAAN, ...
                     argumentOfPerigee, trueAnomaly);
 end
-%%
+%% WP3
 
 % Parameters
 seed = 72;
@@ -402,7 +402,7 @@ xlabel('Elevazion (degrees)')
 ylabel('Occurrencies')
 grid on
 
-
+%% WP4
 
 % free space path loss (distance), tx power, gain of antenna, bandwidth, noise psd
 
