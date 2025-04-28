@@ -368,7 +368,7 @@ fprintf('\n');
 figure(1)
 plot(full_time, 20*log10(abs(full_inputWave)), ...
      full_time, 20*log10(abs(full_fadedWave)))
-title('Power Profile - Last 20 Simulations')
+title('Power Profile - Last 10 Simulations')
 legend('Input Waveform', 'Faded Waveform')
 xlabel('Time (s)')
 ylabel('Power (dB)')
@@ -376,14 +376,14 @@ ylabel('Power (dB)')
 % Channel Gain
 figure(2)
 plot(full_time, 20*log10(abs(full_channel)))
-title('Channel Gain - Last 20 Simulations')
+title('Channel Gain - Last 10 Simulations')
 xlabel('Time (s)')
 ylabel('Path Gain (dB)')
 
 % State Series 
 figure(3)
 plot(full_time, full_state)
-title('State Series - Last 20 Simulations')
+title('State Series - Last 10 Simulations')
 axis([0 full_time(end) -0.5 1.5])
 xlabel('Time (s)')
 ylabel('State')
@@ -395,13 +395,7 @@ title('Satellite Elevation Angle over Time')
 xlabel('Time Step')
 ylabel('Elevation Angle (degrees)')
 
-figure(5)
-histogram(Sat_Ang_time(~isnan(Sat_Ang_time)), 'BinWidth', 5, 'FaceColor', 'g')
-title('Elevation angles occurrency')
-xlabel('Elevazion (degrees)')
-ylabel('Occurrencies')
-grid on
-
+% Istogramma ????
 
 
 % free space path loss (distance), tx power, gain of antenna, bandwidth, noise psd
