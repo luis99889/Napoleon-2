@@ -180,7 +180,7 @@ bin_centers = (bin_boundaries(1:end-1) + bin_boundaries(2:end)) / 2; % Centers: 
 for j = 1:num_times
     for k = 1:n
         elevation = closest_sat_elevations(j, k);
-        if elevation > 0 % Only discretize non-zero (valid) elevations
+        if elevation > 0 % Only discretize non-zero (valid) elevations ..... 20 30 45 60 70 function quantize
             % Find the appropriate bin using boundaries
             if elevation < bin_boundaries(2)
                 closest_sat_elevations_discrete(j, k) = bin_centers(1); % Bin 1: 9 degrees
@@ -245,7 +245,7 @@ end
 
 % Parameters
 seed = 72;
-Sample_Rate = 400;
+Sample_Rate = 400; % Hz
 numSamples = Sample_Rate * num_times * 60; % Sample rate times duration of simulation in seconds
 
 all_faded_waves = cell(num_times, 1);
@@ -270,7 +270,7 @@ for t = 1:num_times
         chan.MobileSpeed = 0.5;
         chan.AzimuthOrientation = 0;
         chan.SampleRate = Sample_Rate;
-        chan.InitialState = "Good";
+        chan.InitialState = "Good"; % should be random or call it good for the first
         chan.FadingTechnique = "Filtered Gaussian noise";
         chan.RandomStream = "mt19937ar with seed";
         chan.Seed = seed + t; % ensure unique seed for each time
@@ -369,9 +369,14 @@ axis([0 full_time(end) -0.5 1.5])
 xlabel('Time (s)')
 ylabel('State')
 
+%%
 figure(4)
-plot(Sat_Ang_time)
+plot(Sat_Ang_time, 'o-', 'MarkerSize', 3, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r')
 title('Satellite Elevation Angle over Time')
 xlabel('Time Step')
 ylabel('Elevation Angle (degrees)')
 
+
+% free space path loss (distance), tx power, gain of antenna, bandwidth, noise psd
+
+% maximal ratio combining
