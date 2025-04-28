@@ -241,7 +241,7 @@ function sat = createConstellation(sc, P, S, semiMajorAxis, inclination)
     sat = satellite(sc, semiMajorAxis, eccentricity, inclination, RAAN, ...
                     argumentOfPerigee, trueAnomaly);
 end
-%%
+%% WP3
 
 % Parameters
 seed = 72;
@@ -256,6 +256,8 @@ all_distances = cell(num_times, 1);
 Sat_Ang_time = zeros(num_times,1);
 
 % Loop over time steps
+new_State = "good";  % The very first state is set 'good' (lowercase)
+
 for t = 1:num_times
     % Use elevation for this time
     elev = closest_sat_elevations_discrete(t);
@@ -270,32 +272,49 @@ for t = 1:num_times
         chan.MobileSpeed = 0.5;
         chan.AzimuthOrientation = 0;
         chan.SampleRate = Sample_Rate;
-        chan.InitialState = "Good"; % should be random or call it good for the first
+        
+        chan.InitialState = new_State;  % Use the last state of the previous iteration
+        
         chan.FadingTechnique = "Filtered Gaussian noise";
         chan.RandomStream = "mt19937ar with seed";
-        chan.Seed = seed + t; % ensure unique seed for each time
+        chan.Seed = seed + t; % Ensure unique seed for each time
 
         % Set random number generator with seed
         rng(seed);
+        
         % Channel duration 60 sec, because we update the angle every 60 sec
         chanDur = 60; 
         % Random input waveform
-        numSamples = floor(chan.SampleRate*chanDur)+1;
-        in = complex(randn(numSamples,1),randn(numSamples,1));
+        numSamples = floor(chan.SampleRate * chanDur) + 1;
+        in = complex(randn(numSamples,1), randn(numSamples,1));
+        
         % Pass the input signal through channel
-        [fadedWave,channelCoefficients,sampleTimes,stateSeries] = step(chan,in);
+        [fadedWave, channelCoefficients, sampleTimes, stateSeries] = step(chan, in);
 
-        % Store
+        % Store results
         all_faded_waves{t} = fadedWave;
         all_channel_gains{t} = channelCoefficients;
         all_states{t} = stateSeries;
         all_times{t} = sampleTimes;
+
+        % Memorize the last state, converted to lowercase
+        previousState = stateSeries(end);
+
+        if previousState == 0
+
+            new_State = "bad";
+
+        else 
+            new_State = "good";
+        end
+
+                  
     else
         % No satellite in view — store NaN
         all_faded_waves{t} = NaN;
         all_channel_gains{t} = NaN;
         all_states{t} = NaN;
-        all_times{t} = NaN;
+        all_times{t} = NaN;        
     end
 end
 
@@ -303,7 +322,7 @@ end
 
 % Numero totale di simulazioni
 num_total = numel(all_faded_waves);
-num_to_concat = min(10, num_total);
+num_to_concat = 20;
 selected_idxs = num_total - num_to_concat + 1 : num_total;
 
 % Inizializza array concatenati
@@ -338,18 +357,18 @@ for idx = selected_idxs
     t_offset = t_offset + timeVector(end);
 end
 
-Last_10_Ang = Sat_Ang_time(end-9:end);
+Last_20_Ang = Sat_Ang_time(end-19:end);
 
 
-fprintf('Last 10 Elevation Angles: ');
-fprintf('%f ', Last_10_Ang);
+fprintf('Last 20 Elevation Angles: ');
+fprintf('%f ', Last_20_Ang);
 fprintf('\n');
 
 % Power Profile
 figure(1)
 plot(full_time, 20*log10(abs(full_inputWave)), ...
      full_time, 20*log10(abs(full_fadedWave)))
-title('Power Profile - Last 10 Simulations')
+title('Power Profile - Last 20 Simulations')
 legend('Input Waveform', 'Faded Waveform')
 xlabel('Time (s)')
 ylabel('Power (dB)')
@@ -357,14 +376,14 @@ ylabel('Power (dB)')
 % Channel Gain
 figure(2)
 plot(full_time, 20*log10(abs(full_channel)))
-title('Channel Gain - Last 10 Simulations')
+title('Channel Gain - Last 20 Simulations')
 xlabel('Time (s)')
 ylabel('Path Gain (dB)')
 
 % State Series 
 figure(3)
 plot(full_time, full_state)
-title('State Series - Last 10 Simulations')
+title('State Series - Last 20 Simulations')
 axis([0 full_time(end) -0.5 1.5])
 xlabel('Time (s)')
 ylabel('State')
@@ -376,6 +395,14 @@ title('Satellite Elevation Angle over Time')
 xlabel('Time Step')
 ylabel('Elevation Angle (degrees)')
 
+figure(5)
+histogram(Sat_Ang_time(~isnan(Sat_Ang_time)), 'BinWidth', 5, 'FaceColor', 'g')
+title('Elevation angles occurrency')
+xlabel('Elevazion (degrees)')
+ylabel('Occurrencies')
+grid on
+
+%% WP4
 
 % free space path loss (distance), tx power, gain of antenna, bandwidth, noise psd
 
