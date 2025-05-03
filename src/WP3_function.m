@@ -1,9 +1,6 @@
-function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete)
+function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed)
 
-
-% Parameters
-seed = 72;
-numSamples = Sample_Rate * num_times * 60; % Sample rate times duration of simulation in seconds
+% WP3
 
 all_faded_waves = cell(num_times, 1);
 all_channel_gains = cell(num_times, 1);
@@ -39,8 +36,8 @@ for t = 1:num_times
         % Set random number generator with seed
         rng(seed);
         
-        % Channel duration 60 sec, because we update the angle every 60 sec
-        chanDur = 60; 
+        % Channel duration 30 sec, because we update the angle every 30 sec
+        chanDur = 30; 
         % Random input waveform
         numSamples = floor(chan.SampleRate * chanDur) + 1;
         in = complex(randn(numSamples,1), randn(numSamples,1));
@@ -68,10 +65,12 @@ for t = 1:num_times
                   
     else
         % No satellite in view — store NaN
-        all_faded_waves{t} = NaN;
-        all_channel_gains{t} = NaN;
-        all_states{t} = NaN;
-        all_times{t} = NaN;        
+        all_faded_waves{t} = (1e-10 * ones(12001, 1));  
+        all_channel_gains{t} = (1e-10 * ones(12001, 1));  
+        all_states{t} = (1e-10 * ones(12001, 1));
+        all_times{t} = linspace(0, 30, 12001); 
+
+        new_State = "bad";
     end
 end
 
@@ -80,11 +79,14 @@ end
 % Total number of simulations
 num_total = numel(all_faded_waves);
 
+disp (num_total);
+
 % Number of simulations to concatenate
 num_to_concat = 20;
 
 % Indices of the simulations to be concatenated
 selected_idxs = num_total - num_to_concat + 1 : num_total;
+disp (selected_idxs);
 
 % Initialize arrays for the concatenated data
 full_time = [];
@@ -116,7 +118,9 @@ for idx = selected_idxs
     full_inputWave = [full_inputWave; inputSegment(:)];
     
     % Update the cumulative time offset
-    t_offset = t_offset + timeVector(end);
+    segment_duration = timeVector(end) - timeVector(1);
+    t_offset = t_offset + segment_duration;
+
 end
 
 
@@ -131,7 +135,7 @@ fprintf('\n');
 figure(1)
 plot(full_time, 20*log10(abs(full_inputWave)), ...
      full_time, 20*log10(abs(full_fadedWave)))
-title('Power Profile - Last 20 Simulations')
+title(sprintf('Power Profile - Last %d Simulations', num_to_concat));
 legend('Input Waveform', 'Faded Waveform')
 xlabel('Time (s)')
 ylabel('Power (dB)')
@@ -139,14 +143,14 @@ ylabel('Power (dB)')
 % Channel Gain
 figure(2)
 plot(full_time, 20*log10(abs(full_channel)))
-title('Channel Gain - Last 20 Simulations')
+title(sprintf('Channel Gain - Last %d Simulations', num_to_concat));
 xlabel('Time (s)')
 ylabel('Path Gain (dB)')
 
 % State Series 
 figure(3)
 plot(full_time, full_state)
-title('State Series - Last 20 Simulations')
+title(sprintf('State Series - Last %d Simulations', num_to_concat));
 % axis([0 full_time(end) -0.5 1.5])
 xlabel('Time (s)')
 ylabel('State')
