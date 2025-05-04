@@ -14,7 +14,7 @@ new_State = "good";  % The very first state is set 'good' (lowercase)
 
 for t = 1:num_times
     % Use elevation for this time
-    elev = closest_sat_elevations_discrete(t);
+    elev = closest_sat_elevations_discrete(t,1);
     
     Sat_Ang_time(t) = elev;
     
