@@ -24,4 +24,4 @@ seed = 60;
 [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time, all_channel_gains] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed, CarrierFrequency);
 
 %% Call WP4 function
-[Bit_rate,channel_gain_avg] = WP4_function(all_channel_gains, closest_sat_dists,CarrierFrequency);
+[Bit_rate] = WP4_function(all_channel_gains, closest_sat_dists,CarrierFrequency);

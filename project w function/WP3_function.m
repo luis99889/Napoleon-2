@@ -1,4 +1,4 @@
-function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed)
+function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time, all_channel_gains] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed, CarrierFrequency)
 
 % WP3
 
@@ -21,7 +21,7 @@ for t = 1:num_times
     if elev > 0  % Only simulate if elevation is valid
         chan = p681LMSChannel;
         chan.Environment = "Urban";
-        chan.CarrierFrequency = 3.8e9;
+        chan.CarrierFrequency = CarrierFrequency;
         chan.ElevationAngle = elev;
         chan.MobileSpeed = 0.5;
         chan.AzimuthOrientation = 0;
@@ -43,11 +43,11 @@ for t = 1:num_times
         in = complex(randn(numSamples,1), randn(numSamples,1));
         
         % Pass the input signal through channel
-        [fadedWave, channelCoefficients, sampleTimes, stateSeries] = step(chan, in);
+        [fadedWave, pathgains, sampleTimes, stateSeries] = step(chan, in);
 
         % Store results
         all_faded_waves{t} = fadedWave;
-        all_channel_gains{t} = channelCoefficients;
+        all_channel_gains{t} = pathgains;
         all_states{t} = stateSeries;
         all_times{t} = sampleTimes;
 
