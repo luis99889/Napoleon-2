@@ -19,7 +19,7 @@ semiMajorAxis = repmat(semiMajorAxis, 1, total_sats); % Same for all
 inclination = repmat(inclination, 1, total_sats);     % Same for all
 
 % Compute RAAN: repeat each plane's RAAN for S satellites
-RAAN = repelem((0:P-1) * 180 / P, S);
+RAAN = repelem((0:P-1) * 360 / P, S);
 
 % Compute true anomaly: repeat the sequence [0, 360/S, ..., (S-1)*360/S] for P planes
 trueAnomaly = repmat((0:S-1) * 360 / S, 1, P);

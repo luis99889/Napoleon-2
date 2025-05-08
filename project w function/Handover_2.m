@@ -24,15 +24,24 @@ for i = 2 : length(closest_sat_elevations_discrete)
         closest_sat_elevations_discrete_2 (i) = closest_sat_elevations_discrete(i,col);
 
     else
-        closest_sat_elevations_discrete_2 (i) = closest_sat_elevations_discrete(i,1);
-        sat_idx = closest_sat_indices(i,1);
-        Handover_counter = Handover_counter + 1;
-
+        if all(closest_sat_elevations_discrete(i,:) == 0)
+            % Nessun satellite disponibile: elevazione resta 0, non si fa handover
+            % Non cambiare sat_idx né contare handover
+            closest_sat_elevations_discrete_2(i) = 0;
+        else
+            % Handover effettivo
+            closest_sat_elevations_discrete_2(i) = closest_sat_elevations_discrete(i,1);
+            sat_idx = closest_sat_indices(i,1);
+            Handover_counter = Handover_counter + 1;
+        end
     end
 end
 
+disp("type 0: ");
+disp(HO_opt_counter);
+disp("type 1: ");
 disp(Handover_counter);
-%disp(HO_opt_counter);
+
 
 
 end

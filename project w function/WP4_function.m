@@ -9,7 +9,7 @@ G_sat = 10^5;
 N0 = 3.98e-21;
 BW = 5e6;
 N = length(closest_sat_dists);
-P_Tx = 10e-3;
+P_Tx = 10e-3; % 10 mW
 
 %free-space path loss
 for i = 1: length(closest_sat_dists)
