@@ -1,4 +1,4 @@
-function [closest_sat_elevations_discrete_2] = Handover_2(closest_sat_elevations_discrete,closest_sat_indices, Handover_Type)
+function [closest_sat_elevations_discrete_2] = Handover_2_IF_version(closest_sat_elevations_discrete,closest_sat_indices, Handover_Type)
 
 closest_sat_elevations_discrete_2 = zeros (length(closest_sat_elevations_discrete),1);
 
@@ -42,20 +42,5 @@ else
     disp(Handover_counter);
     disp("type 1")
 end
-
-
-
-
-       
-
-
-
-
-
-
-
-
-
-
 
 end

@@ -1,6 +1,5 @@
 function [Bit_rate,channel_gain_avg,L] = WP4_function(all_channel_gains,closest_sat_dists, CarrierFrequency)
 
-
 f = CarrierFrequency;
 c = 3e8;
 L = zeros (1, length(closest_sat_dists));
