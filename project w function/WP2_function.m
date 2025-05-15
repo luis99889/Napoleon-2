@@ -1,4 +1,4 @@
-function [closest_sat_coords, closest_sat_indices, closest_sat_elevations_discrete, closest_sat_dists, num_times] = WP2_function(P, S, semiMajorAxis, inclination, gs_lat, gs_long, gs_alt)
+function [closest_sat_coords, closest_sat_indices, closest_sat_elevations_discrete, closest_sat_dists, num_times] = WP2_function(P, S, semiMajorAxis, inclination, gs_lat, gs_long, gs_alt, raan)
 
 % Initializing the satellite scenario
 startTime = datetime(2025,3,02,0,0,0);
@@ -19,7 +19,7 @@ semiMajorAxis = repmat(semiMajorAxis, 1, total_sats); % Same for all
 inclination = repmat(inclination, 1, total_sats);     % Same for all
 
 % Compute RAAN: repeat each plane's RAAN for S satellites
-RAAN = repelem((0:P-1) * 360 / P, S);
+RAAN = repelem((0:P-1) * raan / P, S);
 
 % Compute true anomaly: repeat the sequence [0, 360/S, ..., (S-1)*360/S] for P planes
 trueAnomaly = repmat((0:S-1) * 360 / S, 1, P);

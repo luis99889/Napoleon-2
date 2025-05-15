@@ -1,4 +1,4 @@
-function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time, all_channel_gains] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed, CarrierFrequency)
+function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time, all_channel_gains] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed, CarrierFrequency,MobileSpeed)
 
 % WP3
 
@@ -23,7 +23,7 @@ for t = 1:num_times
         chan.Environment = "Urban";
         chan.CarrierFrequency = CarrierFrequency;
         chan.ElevationAngle = elev;
-        chan.MobileSpeed = 0.5;
+        chan.MobileSpeed = MobileSpeed;
         chan.AzimuthOrientation = 0;
         chan.SampleRate = Sample_Rate;
         
