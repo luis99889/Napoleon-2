@@ -8,6 +8,7 @@ S = 10;               % Satellites per orbit
 semiMajorAxis = 6371000 + 780000; % Orbital radius in meters (R_E + altitude)
 inclination = 86.4;   % degrees, 53 -> Starlink, 86.4 -> Iridium
 raan = 180; % 360 -> Starlink, 180 -> Iridium
+N = 3; % Num of satellites to consider for transmission
 
 % Define Ground Station parameters
 gs_lat = 45.07;
@@ -15,7 +16,7 @@ gs_long = 7.69;
 gs_alt = 0;
 
 % Call the WP2 function
-[closest_sat_coords, closest_sat_indices, closest_sat_elevations_discrete, closest_sat_dists, num_times] = WP2_function(P, S, semiMajorAxis, inclination, gs_lat, gs_long, gs_alt, raan);
+[closest_sat_coords, closest_sat_indices, closest_sat_elevations_discrete, closest_sat_dists, num_times] = WP2_function(P, S, semiMajorAxis, inclination, gs_lat, gs_long, gs_alt, raan, N);
 
 %% HANDOVER FUNCTION
 

@@ -1,4 +1,4 @@
-function [closest_sat_coords, closest_sat_indices, closest_sat_elevations_discrete, closest_sat_dists, num_times] = WP2_function(P, S, semiMajorAxis, inclination, gs_lat, gs_long, gs_alt, raan)
+function [closest_sat_coords, closest_sat_indices, closest_sat_elevations_discrete, closest_sat_dists, num_times] = WP2_function(P, S, semiMajorAxis, inclination, gs_lat, gs_long, gs_alt, raan, N)
 
 % Initializing the satellite scenario
 startTime = datetime(2025,3,02,0,0,0);
@@ -55,7 +55,7 @@ for j = 1:num_times
 end
 
 % Define the number of closest satellites to find
-n = 3;
+n = N;
 
 % Preallocate matrices to store data for n closest satellites
 closest_sat_coords = zeros(num_times, n, 3);  % 3D matrix: num_times x n x 3 (for x,y,z)
@@ -185,10 +185,10 @@ end
 
 fprintf('Discretization complete.\n');
 
-% Visualize (optional)
-play(sc);
-
-% Highlight ground station
-gs.MarkerColor = [1 0 0]; % Red marker for ground station
+% % Visualize (optional)
+% play(sc);
+% 
+% % Highlight ground station
+% gs.MarkerColor = [1 0 0]; % Red marker for ground station
 
 end

@@ -1,8 +1,8 @@
-function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time, all_channel_gains] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed, CarrierFrequency,MobileSpeed)
+function [Sat_Ang_time, full_fadedWave, full_inputWave, full_channel, full_state, full_time, all_channel_gains] = WP3_function(Sample_Rate, num_times, closest_sat_elevations_discrete, seed, CarrierFrequency,MobileSpeed, N)
 
 % WP3
 
-all_faded_waves = cell(num_times, 1);
+all_faded_waves = cell(num_times, N);
 all_channel_gains = cell(num_times, 1);
 all_states = cell(num_times, 1);
 all_distances = cell(num_times, 1);
@@ -12,68 +12,69 @@ Sat_Ang_time = zeros(num_times,1);
 % Loop over time steps
 new_State = "good";  % The very first state is set 'good' (lowercase)
 
-for t = 1:num_times
-    % Use elevation for this time
-    elev = closest_sat_elevations_discrete(t,1);
+for j = 1:N
+    for t = 1:num_times
+        % Use elevation for this time
+        elev = closest_sat_elevations_discrete(t,j);
+        
+        Sat_Ang_time(t) = elev;
+        
+        if elev > 0  % Only simulate if elevation is valid
+            chan = p681LMSChannel;
+            chan.Environment = "Urban";
+            chan.CarrierFrequency = CarrierFrequency;
+            chan.ElevationAngle = elev;
+            chan.MobileSpeed = MobileSpeed;
+            chan.AzimuthOrientation = 0;
+            chan.SampleRate = Sample_Rate;
+            
+            chan.InitialState = new_State;  % Use the last state of the previous iteration
+            
+            chan.FadingTechnique = "Filtered Gaussian noise";
+            chan.RandomStream = "mt19937ar with seed";
+            chan.Seed = seed + t; % Ensure unique seed for each time
     
-    Sat_Ang_time(t) = elev;
+            % Set random number generator with seed
+            rng(seed);
+            
+            % Channel duration 30 sec, because we update the angle every 30 sec
+            chanDur = 30; 
+            % Random input waveform
+            numSamples = floor(chan.SampleRate * chanDur) + 1;
+            in = complex(randn(numSamples,1), randn(numSamples,1));
+            
+            % Pass the input signal through channel
+            [fadedWave, pathgains, sampleTimes, stateSeries] = step(chan, in);
     
-    if elev > 0  % Only simulate if elevation is valid
-        chan = p681LMSChannel;
-        chan.Environment = "Urban";
-        chan.CarrierFrequency = CarrierFrequency;
-        chan.ElevationAngle = elev;
-        chan.MobileSpeed = MobileSpeed;
-        chan.AzimuthOrientation = 0;
-        chan.SampleRate = Sample_Rate;
-        
-        chan.InitialState = new_State;  % Use the last state of the previous iteration
-        
-        chan.FadingTechnique = "Filtered Gaussian noise";
-        chan.RandomStream = "mt19937ar with seed";
-        chan.Seed = seed + t; % Ensure unique seed for each time
-
-        % Set random number generator with seed
-        rng(seed);
-        
-        % Channel duration 30 sec, because we update the angle every 30 sec
-        chanDur = 30; 
-        % Random input waveform
-        numSamples = floor(chan.SampleRate * chanDur) + 1;
-        in = complex(randn(numSamples,1), randn(numSamples,1));
-        
-        % Pass the input signal through channel
-        [fadedWave, pathgains, sampleTimes, stateSeries] = step(chan, in);
-
-        % Store results
-        all_faded_waves{t} = fadedWave;
-        all_channel_gains{t} = pathgains;
-        all_states{t} = stateSeries;
-        all_times{t} = sampleTimes;
-
-        % Memorize the last state, converted to lowercase
-        previousState = stateSeries(end);
-
-        if previousState == 0
-
+            % Store results
+            all_faded_waves{t} = fadedWave;
+            all_channel_gains{t} = pathgains;
+            all_states{t} = stateSeries;
+            all_times{t} = sampleTimes;
+    
+            % Memorize the last state, converted to lowercase
+            previousState = stateSeries(end);
+    
+            if previousState == 0
+    
+                new_State = "bad";
+    
+            else 
+                new_State = "good";
+            end
+    
+                      
+        else
+            % No satellite in view — store NaN
+            all_faded_waves{t} = (1e-10 * ones(12001, 1));  
+            all_channel_gains{t} = (1e-10 * ones(12001, 1));  
+            all_states{t} = (1e-10 * ones(12001, 1));
+            all_times{t} = linspace(0, 30, 12001); 
+    
             new_State = "bad";
-
-        else 
-            new_State = "good";
         end
-
-                  
-    else
-        % No satellite in view — store NaN
-        all_faded_waves{t} = (1e-10 * ones(12001, 1));  
-        all_channel_gains{t} = (1e-10 * ones(12001, 1));  
-        all_states{t} = (1e-10 * ones(12001, 1));
-        all_times{t} = linspace(0, 30, 12001); 
-
-        new_State = "bad";
     end
 end
-
 
 
 % Total number of simulations
